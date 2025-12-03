@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Détails Client{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm p-4 mx-auto" style="max-width:720px;">
+        <h1 class="h3 text-center text-success fw-bold mb-3">Détails du Client</h1>
+
+        <dl class="row">
+            <dt class="col-sm-4">Nom</dt>
+            <dd class="col-sm-8">{{ client.nom }}</dd>
+
+            <dt class="col-sm-4">Prénom</dt>
+            <dd class="col-sm-8">{{ client.prenom }}</dd>
+
+            <dt class="col-sm-4">Email</dt>
+            <dd class="col-sm-8"><a href="mailto:{{ client.email }}">{{ client.email }}</a></dd>
+
+            <dt class="col-sm-4">Téléphone</dt>
+            <dd class="col-sm-8">{{ client.telephone }}</dd>
+
+            <dt class="col-sm-4">Adresse</dt>
+            <dd class="col-sm-8">{{ client.adresse }}</dd>
+        </dl>
+
+        <div class="d-flex gap-2 mt-3">
+            <a href="{% url 'modifier_client' client.id %}" class="btn btn-warning">Modifier</a>
+            <a href="{% url 'supprimer_client' client.id %}" class="btn btn-danger" onclick="return confirm('Voulez-vous vraiment supprimer ce client ?');">Supprimer</a>
+            <a href="{% url 'liste_clients' %}" class="btn btn-secondary ms-auto">Retour</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

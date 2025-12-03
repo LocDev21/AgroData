@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Détails Transformation{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm p-4 mx-auto" style="max-width:720px;">
+        <h1 class="h3 text-center text-success fw-bold mb-3">Détails de la Transformation</h1>
+
+        <dl class="row">
+            <dt class="col-sm-4">Code Lot</dt>
+            <dd class="col-sm-8">{{ transformation.code_lot }}</dd>
+
+            <dt class="col-sm-4">Récolte</dt>
+            <dd class="col-sm-8">{{ transformation.recolte.fruit }} — {{ transformation.recolte.producteur.nom }} {{ transformation.recolte.producteur.prenom }}</dd>
+
+            <dt class="col-sm-4">Étape</dt>
+            <dd class="col-sm-8">{{ transformation.etape }}</dd>
+
+            <dt class="col-sm-4">Quantité départ</dt>
+            <dd class="col-sm-8">{{ transformation.quantite_depart }}</dd>
+
+            <dt class="col-sm-4">Quantité finale</dt>
+            <dd class="col-sm-8">{{ transformation.quantite_finale }}</dd>
+
+            <dt class="col-sm-4">Période</dt>
+            <dd class="col-sm-8">{{ transformation.date_debut }} → {{ transformation.date_fin }}</dd>
+        </dl>
+
+        <div class="d-flex gap-2 mt-3">
+            <a href="{% url 'modifier_transformation' transformation.id %}" class="btn btn-warning">Modifier</a>
+            <a href="{% url 'supprimer_transformation' transformation.id %}" class="btn btn-danger" onclick="return confirm('Voulez-vous vraiment supprimer cette transformation ?');">Supprimer</a>
+            <a href="{% url 'liste_transformations' %}" class="btn btn-secondary ms-auto">Retour</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

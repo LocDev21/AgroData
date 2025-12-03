@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Modifier Transformation{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+	<div class="card shadow-sm p-4 mx-auto" style="max-width:720px;">
+		<h1 class="h4 text-center text-success fw-bold mb-3">Modifier la Transformation</h1>
+
+		<form method="post">
+			{% csrf_token %}
+			<div class="mb-3">
+				<label class="form-label">Code Lot</label>
+				<input type="text" name="code_lot" class="form-control" value="{{ transformation.code_lot }}" required>
+			</div>
+
+			<div class="mb-3">
+				<label class="form-label">Récolte</label>
+				<select name="recolte" class="form-select" required>
+					{% if recoltes %}
+						{% for r in recoltes %}
+							<option value="{{ r.id }}" {% if transformation.recolte and r.id == transformation.recolte.id %}selected{% endif %}>{{ r.fruit }} - {{ r.producteur.nom }} {{ r.producteur.prenom }}</option>
+						{% endfor %}
+					{% elif recolte %}
+						{% for r in recolte %}
+							<option value="{{ r.id }}" {% if transformation.recolte and r.id == transformation.recolte.id %}selected{% endif %}>{{ r.fruit }} - {{ r.producteur.nom }} {{ r.producteur.prenom }}</option>
+						{% endfor %}
+					{% else %}
+						<option value="" disabled>Aucune récolte disponible</option>
+					{% endif %}
+				</select>
+			</div>
+
+			<div class="mb-3">
+				<label class="form-label">Étape</label>
+				<select name="etape" class="form-select" required>
+					<option value="LYOPHILISATION" {% if transformation.etape == 'LYOPHILISATION' %}selected{% endif %}>Lyophilisation</option>
+					<option value="CONDITIONNEMENT" {% if transformation.etape == 'CONDITIONNEMENT' %}selected{% endif %}>Conditionnement</option>
+					<option value="STOCKE" {% if transformation.etape == 'STOCKE' %}selected{% endif %}>Stocké</option>
+				</select>
+			</div>
+
+			<div class="mb-3">
+				<label class="form-label">Quantité départ</label>
+				<input type="number" step="any" name="quantite_depart" class="form-control" value="{{ transformation.quantite_depart }}" required>
+			</div>
+
+			<div class="mb-3">
+				<label class="form-label">Quantité finale</label>
+				<input type="number" step="any" name="quantite_finale" class="form-control" value="{{ transformation.quantite_finale }}">
+			</div>
+
+			<div class="row">
+				<div class="col mb-3">
+					<label class="form-label">Date début</label>
+					<input type="date" name="date_debut" class="form-control" value="{{ transformation.date_debut|date:'Y-m-d' }}" required>
+				</div>
+				<div class="col mb-3">
+					<label class="form-label">Date fin</label>
+					<input type="date" name="date_fin" class="form-control" value="{{ transformation.date_fin|date:'Y-m-d' }}">
+				</div>
+			</div>
+
+			<div class="d-grid d-md-flex gap-2">
+				<button type="submit" class="btn btn-primary">Modifier</button>
+				<a href="{% url 'liste_transformations' %}" class="btn btn-secondary">Annuler</a>
+			</div>
+		</form>
+	</div>
+</div>
+{% endblock %}

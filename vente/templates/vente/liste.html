@@ -1,0 +1,141 @@
+
+{% extends 'base.html' %}
+{% block title %}Liste des Ventes{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h1 class="text-center mb-4 fw-bold text-success">Liste des Ventes</h1>
+
+    <div class="text-center mb-3">
+        <a href="{% url 'ajouter_vente' %}" class="btn btn-primary btn-lg shadow-sm">
+            <i class="lni lni-plus"></i> Nouvelle vente
+        </a>
+    </div>
+
+    <!-- Search / Filters (inspired by producteurs list) -->
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-12">
+            <form method="get" class="row g-2 align-items-center">
+                <div class="col-auto" style="min-width:180px;">
+                    <select name="field" class="form-select" aria-label="Champ de recherche">
+                        <option value="" {% if not field %}selected{% endif %}>Tous les champs</option>
+                        <option value="client" {% if field == 'client' %}selected{% endif %}>Client</option>
+                        <option value="facture" {% if field == 'facture' %}selected{% endif %}>Facture</option>
+                        <option value="produit" {% if field == 'produit' %}selected{% endif %}>Produit</option>
+                        <option value="quantite" {% if field == 'quantite' %}selected{% endif %}>Quantité</option>
+                        <option value="prix" {% if field == 'prix' %}selected{% endif %}>Prix</option>
+                    </select>
+                </div>
+
+                <div class="col-auto" style="flex:1;">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="lni lni-search"></i></span>
+                        <input id="search-input" name="q" class="form-control" type="search" placeholder="Recherche (ex: nom client, n° facture, produit)" value="{{ query|default:'' }}" aria-label="Recherche">
+                        <button id="clear-search" type="button" class="btn btn-outline-secondary" title="Effacer la recherche">×</button>
+                    </div>
+                </div>
+
+                <div class="col-auto" style="min-width:200px;">
+                    <select name="product" class="form-select">
+                        <option value="">Tous les produits</option>
+                        {% for s in products %}
+                            <option value="{{ s.id }}" {% if selected_product|stringformat:"s" == s.id|stringformat:"s" %}selected{% endif %}>{{ s.produit }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-auto">
+                    <div class="dropdown" data-bs-auto-close="outside">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="factureDropdown" data-bs-toggle="dropdown" aria-expanded="false">Facture</button>
+                        <div class="dropdown-menu p-2" aria-labelledby="factureDropdown">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="has_facture" id="factures_all" value="" {% if not has_facture %}checked{% endif %}>
+                                <label class="form-check-label" for="factures_all">Tous</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="has_facture" id="factures_with" value="1" {% if has_facture == '1' %}checked{% endif %}>
+                                <label class="form-check-label" for="factures_with">Avec</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="has_facture" id="factures_without" value="0" {% if has_facture == '0' %}checked{% endif %}>
+                                <label class="form-check-label" for="factures_without">Sans</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-auto" style="min-width:260px;">
+                    <div class="row g-1">
+                        <div class="col">
+                            <input name="min_q" type="number" step="any" class="form-control" placeholder="Quantité min" value="{{ min_q|default:'' }}">
+                        </div>
+                        <div class="col">
+                            <input name="max_q" type="number" step="any" class="form-control" placeholder="Quantité max" value="{{ max_q|default:'' }}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-auto" style="min-width:260px;">
+                    <div class="row g-1">
+                        <div class="col">
+                            <input name="min_price" type="number" step="any" class="form-control" placeholder="Prix min" value="{{ min_price|default:'' }}">
+                        </div>
+                        <div class="col">
+                            <input name="max_price" type="number" step="any" class="form-control" placeholder="Prix max" value="{{ max_price|default:'' }}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-auto">
+                    <button class="btn btn-outline-success" type="submit">Filtrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="table-responsive shadow-sm rounded">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-success text-white" style="background-color: #2E7D32;">
+                <tr>
+                    <th>Client</th>
+                    <th>Produit (Stock)</th>
+                    <th>Facture</th>
+                    <th>Quantité vendue</th>
+                    <th>Prix unitaire</th>
+                    <th>Montant total</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in ventes %}
+                <tr>
+                    <td>{{ v.client.nom }} {{ v.client.prenom }}</td>
+                    <td>{{ v.stock.produit }}</td>
+                    <td>
+                        {% with f=v.facture_set.all.0 %}
+                            {% if f %}
+                                <a href="{% url 'details_facture' f.id %}">{{ f.numero_facture }}</a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td>{{ v.quantite_vendue }}</td>
+                    <td>{{ v.prix_unitaire }}</td>
+                    <td>{{ v.montant_total }}</td>
+                    <td>{{ v.date_vente }}</td>
+                    <td>
+                        <a href="{% url 'details_vente' v.id %}" class="btn btn-info btn-sm me-1">Voir</a>
+                        <a href="{% url 'modifier_vente' v.id %}" class="btn btn-warning btn-sm me-1">Modifier</a>
+                        <a href="{% url 'supprimer_vente' v.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Voulez-vous vraiment supprimer cette vente ?');">Supprimer</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-muted">Aucune vente trouvée</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

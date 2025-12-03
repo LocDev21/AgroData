@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Détails Producteur{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm p-4 mx-auto" style="max-width:720px;">
+        <h1 class="h3 text-center text-success fw-bold mb-3">Détails du Producteur</h1>
+        <div class="row">
+            <div class="col-md-6">
+                <h5 class="text-success">Infos Producteur</h5>
+                <ul class="list-group mb-3">
+                    <li class="list-group-item"><strong>Nom:</strong> {{ producteur.nom }}</li>
+                    <li class="list-group-item"><strong>Prénom:</strong> {{ producteur.prenom }}</li>
+                    <li class="list-group-item"><strong>Adresse:</strong> {{ producteur.adresse }}</li>
+                    <li class="list-group-item"><strong>Téléphone:</strong> {{ producteur.telephone }}</li>
+                </ul>
+
+                <div class="d-flex gap-2">
+                    <a href="{% url 'modifier_producteur' producteur.id %}" class="btn btn-warning">Modifier</a>
+                    <a href="{% url 'supprimer_producteur' producteur.id %}" class="btn btn-danger" onclick="return confirm('Voulez-vous vraiment supprimer ce producteur ?');">Supprimer</a>
+                    <a href="{% url 'liste_producteurs' %}" class="btn btn-secondary ms-auto">Retour</a>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <h5 class="text-success">Parcelles</h5>
+                {% if producteur.parcelle_set.all %}
+                    <ul class="list-group mb-3">
+                        {% for parcelle in producteur.parcelle_set.all %}
+                            <li class="list-group-item">
+                                <strong>{{ parcelle.nom }}</strong> — {{ parcelle.superficie }} ha
+                                <div class="text-muted">Adresse: {{ parcelle.adresse }}</div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-muted mb-3">Aucune parcelle enregistrée.</div>
+                {% endif %}
+
+                <h5 class="text-success">Récoltes</h5>
+                {% if producteur.recolte_set.all %}
+                    <ul class="list-group">
+                        {% for recolte in producteur.recolte_set.all %}
+                            <li class="list-group-item">
+                                <strong>{{ recolte.fruit }}</strong> — {{ recolte.quantite }}
+                                <div class="text-muted">Parcelle: {{ recolte.parcelle.nom }} | Date: {{ recolte.date_recolte|date:'Y-m-d' }}</div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-muted">Aucune récolte enregistrée.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

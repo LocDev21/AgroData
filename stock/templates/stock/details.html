@@ -1,0 +1,31 @@
+
+{% extends 'base.html' %}
+{% block title %}Détails Stock{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+	<div class="card shadow-sm p-4 mx-auto" style="max-width:720px;">
+		<h1 class="h3 text-center text-success fw-bold mb-3">Détails du Stock</h1>
+
+		<dl class="row">
+			<dt class="col-sm-4">Produit</dt>
+			<dd class="col-sm-8">{{ stock.produit }}</dd>
+
+			<dt class="col-sm-4">Quantité disponible</dt>
+			<dd class="col-sm-8">{{ stock.quantite_disponible }} {{ stock.unite_mesure }}</dd>
+
+			<dt class="col-sm-4">Lot (Transformation)</dt>
+			<dd class="col-sm-8">{{ stock.lot.code_lot|default:"-" }}</dd>
+
+			<dt class="col-sm-4">Date mise à jour</dt>
+			<dd class="col-sm-8">{{ stock.date_mise_a_jour }}</dd>
+		</dl>
+
+		<div class="d-flex gap-2 mt-3">
+			<a href="{% url 'modifier_stock' stock.id %}" class="btn btn-warning">Modifier</a>
+			<a href="{% url 'supprimer_stock' stock.id %}" class="btn btn-danger" onclick="return confirm('Voulez-vous vraiment supprimer ce stock ?');">Supprimer</a>
+			<a href="{% url 'liste_stocks' %}" class="btn btn-secondary ms-auto">Retour</a>
+		</div>
+	</div>
+</div>
+{% endblock %}

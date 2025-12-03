@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nouvelle Vente{% endblock %}
+
+{% block content %}
+<div class="container">
+	<div class="card p-4 mx-auto mt-4" style="max-width:700px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+		<h1 class="h4 text-center text-success mb-4">Nouvelle Vente</h1>
+		<form method="post">
+			{% csrf_token %}
+			<input type="hidden" id="new-client-id" name="new_client_id" value="">
+			<div class="mb-3">
+				<label class="form-label">Client</label>
+				<select name="client" class="form-select" required>
+					<option value="">-- Choisir un client --</option>
+					{% for c in clients %}
+						<option value="{{ c.id }}">{{ c.nom }} {{ c.prenom }}</option>
+					{% endfor %}
+				</select>
+			</div>
+			<div class="mb-2">
+				<button class="btn btn-sm btn-outline-primary" type="button" id="toggle-new-client">Ajouter un nouveau client</button>
+			</div>
+			<div id="new-client-form" class="card card-body mb-3" style="display:none; max-width:700px;">
+				<div class="row g-2">
+					<div class="col-md-6">
+						<input type="text" name="new_nom" class="form-control" placeholder="Nom">
+					</div>
+					<div class="col-md-6">
+						<input type="text" name="new_prenom" class="form-control" placeholder="Prénom">
+					</div>
+					<div class="col-md-6">
+						<input type="text" name="new_telephone" class="form-control" placeholder="Téléphone">
+					</div>
+					<div class="col-md-6">
+						<input type="email" name="new_email" class="form-control" placeholder="Email">
+					</div>
+					<div class="col-12">
+						<input type="text" name="new_adresse" class="form-control" placeholder="Adresse">
+					</div>
+					<div class="col-12 text-end mt-2">
+						<button type="button" id="save-new-client" class="btn btn-sm btn-success">Enregistrer le client</button>
+					</div>
+				</div>
+			</div>
+			<div class="mb-3">
+				<label class="form-label">Stock (Produit)</label>
+				<select name="stock" class="form-select" required>
+					<option value="">-- Choisir un stock --</option>
+					{% for s in stocks %}
+						<option value="{{ s.id }}">{{ s.produit }} - {{ s.quantite_disponible }} {{ s.unite_mesure }}</option>
+					{% endfor %}
+				</select>
+			</div>
+			<div class="mb-3">
+				<label class="form-label">Quantité vendue</label>
+				<input type="number" step="any" name="quantite_vendue" class="form-control" required>
+			</div>
+			<div class="mb-3">
+				<label class="form-label">Prix unitaire</label>
+				<input type="number" step="any" name="prix_unitaire" class="form-control" required>
+			</div>
+			<div class="mb-3">
+				<label class="form-label">Date de vente</label>
+				<input type="date" name="date_vente" class="form-control" required>
+			</div>
+			<div class="mb-3">
+				<label class="form-label">Montant total</label>
+				<input type="number" step="any" name="montant_total" id="montant_total" class="form-control" readonly>
+			</div>
+
+			<div class="form-check mb-3">
+				<input class="form-check-input" type="checkbox" value="1" id="strict-stock-checkbox" name="strict_stock" checked>
+				<label class="form-check-label" for="strict-stock-checkbox">Refuser la vente si stock insuffisant</label>
+			</div>
+
+			<div class="mb-3 form-check">
+				<input class="form-check-input" type="checkbox" value="1" id="create-facture-checkbox" name="create_facture">
+				<label class="form-check-label" for="create-facture-checkbox">Générer une facture après enregistrement</label>
+			</div>
+			<div id="facture-block" style="display:none;" class="border rounded p-3 mb-3">
+				<div class="mb-2">
+					<label class="form-label">Numéro facture</label>
+					<input type="text" name="numero_facture" class="form-control">
+				</div>
+				<div class="row g-2">
+					<div class="col-md-6">
+						<label class="form-label">Mode paiement</label>
+						<select name="mode_paiement" class="form-select">
+							<option value="LIQUIDE">Liquide</option>
+							<option value="OM">Orange Money</option>
+							<option value="MOMO">Mobile Money</option>
+							<option value="PAYCARD">Paycard</option>
+						</select>
+					</div>
+					<div class="col-md-6">
+						<label class="form-label">Statut</label>
+						<select name="statut" class="form-select">
+							<option value="PAYER">Payer</option>
+							<option value="ATTENTE">En Attente</option>
+						</select>
+					</div>
+				</div>
+				<div class="row g-2 mt-2">
+					<div class="col-md-6">
+						<label class="form-label">Montant facture</label>
+						<input type="number" step="any" name="montant" id="facture_montant" class="form-control" readonly>
+					</div>
+					<div class="col-md-6">
+						<label class="form-label">Date émission</label>
+						<input type="date" name="date_emission" class="form-control" value="{{ today|default:None }}">
+					</div>
+				</div>
+			</div>
+
+			<div class="d-grid gap-2">
+				<button type="submit" class="btn btn-success">Enregistrer</button>
+				<a href="{% url 'liste_ventes' %}" class="btn btn-outline-secondary">Annuler</a>
+			</div>
+		</form>
+		<script>
+		document.getElementById('toggle-new-client').addEventListener('click', function(){
+			document.getElementById('new-client-form').style.display = document.getElementById('new-client-form').style.display === 'none' ? 'block' : 'none';
+		});
+
+		// save new client via AJAX
+		document.getElementById('save-new-client').addEventListener('click', function(){
+			const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+			const nom = document.querySelector('input[name="new_nom"]').value.trim();
+			const prenom = document.querySelector('input[name="new_prenom"]').value.trim();
+			const telephone = document.querySelector('input[name="new_telephone"]').value.trim();
+			const email = document.querySelector('input[name="new_email"]').value.trim();
+			const adresse = document.querySelector('input[name="new_adresse"]').value.trim();
+			if(!nom || !prenom){ alert('Nom et prénom requis'); return; }
+			fetch('/clients/ajouter/', {
+				method: 'POST',
+				headers: {'X-CSRFToken': csrftoken, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type':'application/x-www-form-urlencoded'},
+				body: new URLSearchParams({nom:nom, prenom:prenom, telephone:telephone, adresse:adresse, email:email, ajax:'1'})
+			}).then(r=>r.json()).then(data=>{
+				if(data.id){
+					// add to select
+					const sel = document.querySelector('select[name="client"]');
+					const opt = document.createElement('option'); opt.value = data.id; opt.textContent = data.name; sel.appendChild(opt); sel.value = data.id;
+					document.getElementById('new-client-id').value = data.id;
+					document.getElementById('new-client-form').style.display='none';
+					alert('Client créé');
+				} else { alert('Erreur création client'); }
+			}).catch(err=>{ console.error(err); alert('Erreur réseau'); });
+		});
+
+		// toggle facture block
+		document.getElementById('create-facture-checkbox').addEventListener('change', function(){
+			document.getElementById('facture-block').style.display = this.checked ? 'block' : 'none';
+		});
+
+		// compute montant total and update facture amount
+		function computeTotal(){
+			const q = parseFloat(document.querySelector('input[name="quantite_vendue"]').value || 0);
+			const p = parseFloat(document.querySelector('input[name="prix_unitaire"]').value || 0);
+			const total = (isNaN(q) || isNaN(p)) ? 0 : q * p;
+			document.getElementById('montant_total').value = total ? total.toFixed(2) : '';
+			const factInput = document.getElementById('facture_montant');
+			if(factInput) factInput.value = total ? total.toFixed(2) : '';
+		}
+		document.querySelector('input[name="quantite_vendue"]').addEventListener('input', computeTotal);
+		document.querySelector('input[name="prix_unitaire"]').addEventListener('input', computeTotal);
+		// initialize on load
+		computeTotal();
+		</script>
+	</div>
+</div>
+{% endblock %}

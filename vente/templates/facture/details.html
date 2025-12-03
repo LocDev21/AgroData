@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Détails Facture{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+	<div class="card shadow-sm p-4 mx-auto" style="max-width:720px;">
+		<h1 class="h3 text-center text-success fw-bold mb-3">Détails de la Facture</h1>
+
+		<dl class="row">
+			<dt class="col-sm-4">Numéro</dt>
+			<dd class="col-sm-8">{{ facture.numero_facture }}</dd>
+
+			<dt class="col-sm-4">Vente</dt>
+			<dd class="col-sm-8">{{ facture.vente.client.nom }} {{ facture.vente.client.prenom }} — {{ facture.vente.stock.produit }}</dd>
+
+			<dt class="col-sm-4">Date d'émission</dt>
+			<dd class="col-sm-8">{{ facture.date_emission }}</dd>
+
+			<dt class="col-sm-4">Montant</dt>
+			<dd class="col-sm-8">{{ facture.montant }}</dd>
+
+			<dt class="col-sm-4">Mode de paiement</dt>
+			<dd class="col-sm-8">{{ facture.mode_paiement }}</dd>
+
+			<dt class="col-sm-4">Statut</dt>
+			<dd class="col-sm-8">{{ facture.statut }}</dd>
+		</dl>
+
+		<div class="d-flex gap-2 mt-3">
+			<a href="{% url 'modifier_facture' facture.id %}" class="btn btn-warning">Modifier</a>
+			<a href="{% url 'supprimer_facture' facture.id %}" class="btn btn-danger" onclick="return confirm('Voulez-vous vraiment supprimer cette facture ?');">Supprimer</a>
+			<a href="{% url 'print_facture' facture.id %}" target="_blank" class="btn btn-outline-primary">Imprimer</a>
+			<a href="{% url 'download_facture' facture.id %}" class="btn btn-outline-success">Télécharger PDF</a>
+			<a href="{% url 'liste_factures' %}" class="btn btn-secondary ms-auto">Retour</a>
+		</div>
+	</div>
+</div>
+{% endblock %}

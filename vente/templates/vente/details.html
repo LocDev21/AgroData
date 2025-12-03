@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Détails Vente{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm p-4 mx-auto" style="max-width:720px;">
+        <h1 class="h3 text-center text-success fw-bold mb-3">Détails de la Vente</h1>
+
+        <dl class="row">
+            <dt class="col-sm-4">Client</dt>
+            <dd class="col-sm-8">
+                <strong>{{ vente.client.nom }} {{ vente.client.prenom }}</strong>
+                <div class="small text-muted">
+                    {% if vente.client.telephone %}<div>Tél: {{ vente.client.telephone }}</div>{% endif %}
+                    {% if vente.client.email %}<div>Email: {{ vente.client.email }}</div>{% endif %}
+                    {% if vente.client.adresse %}<div>Adresse: {{ vente.client.adresse }}</div>{% endif %}
+                </div>
+                <div class="mt-2">
+                    <a href="{% url 'details_client' vente.client.id %}" class="btn btn-sm btn-outline-info">Voir client</a>
+                    <a href="{% url 'modifier_client' vente.client.id %}" class="btn btn-sm btn-outline-secondary">Modifier client</a>
+                </div>
+            </dd>
+
+            <dt class="col-sm-4">Produit / Stock</dt>
+            <dd class="col-sm-8">{{ vente.stock.produit }}</dd>
+
+            <dt class="col-sm-4">Quantité vendue</dt>
+            <dd class="col-sm-8">{{ vente.quantite_vendue }}</dd>
+
+            <dt class="col-sm-4">Prix unitaire</dt>
+            <dd class="col-sm-8">{{ vente.prix_unitaire }}</dd>
+
+            <dt class="col-sm-4">Montant total</dt>
+            <dd class="col-sm-8">{{ vente.montant_total }}</dd>
+
+            <dt class="col-sm-4">Date de vente</dt>
+            <dd class="col-sm-8">{{ vente.date_vente }}</dd>
+        </dl>
+
+            {% with facture=vente.facture_set.all.0 %}
+            {% if facture %}
+            <hr>
+            <h5 class="mt-3">Facture liée</h5>
+            <dl class="row">
+                <dt class="col-sm-4">Numéro facture</dt>
+                <dd class="col-sm-8">{{ facture.numero_facture }}</dd>
+                <dt class="col-sm-4">Date émission</dt>
+                <dd class="col-sm-8">{{ facture.date_emission }}</dd>
+                <dt class="col-sm-4">Montant</dt>
+                <dd class="col-sm-8">{{ facture.montant }}</dd>
+                <dt class="col-sm-4">Mode paiement</dt>
+                <dd class="col-sm-8">{{ facture.mode_paiement }}</dd>
+                <dt class="col-sm-4">Statut</dt>
+                <dd class="col-sm-8">{{ facture.statut }}</dd>
+            </dl>
+            <div class="d-flex gap-2">
+                <a href="{% url 'details_facture' facture.id %}" class="btn btn-sm btn-info">Voir la facture</a>
+                <a href="{% url 'modifier_facture' facture.id %}" class="btn btn-sm btn-warning">Modifier la facture</a>
+            </div>
+            {% endif %}
+            {% endwith %}
+
+        <div class="d-flex gap-2 mt-3">
+            <a href="{% url 'modifier_vente' vente.id %}" class="btn btn-warning">Modifier</a>
+            <a href="{% url 'supprimer_vente' vente.id %}" class="btn btn-danger" onclick="return confirm('Voulez-vous vraiment supprimer cette vente ?');">Supprimer</a>
+            <a href="{% url 'liste_ventes' %}" class="btn btn-secondary ms-auto">Retour</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

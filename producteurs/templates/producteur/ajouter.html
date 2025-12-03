@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ajouter Producteur{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card p-4 mx-auto mt-4" style="max-width:600px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+        <h1 class="h4 text-center text-success mb-4">Ajouter un Producteur</h1>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" id="producteur-id" name="producteur_id" value="">
+            <div class="mb-3">
+                <label class="form-label">Nom</label>
+                <input type="text" name="nom" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Prénom</label>
+                <input type="text" name="prenom" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Adresse</label>
+                <input type="text" name="adresse" class="form-control">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Téléphone</label>
+                <input type="text" name="telephone" class="form-control">
+            </div>
+
+            <hr>
+            <h5 class="text-success">Parcelles (optionnel)</h5>
+            <div id="parcelles-container">
+                <!-- one empty block by default -->
+                <div class="parcelle-block mb-3 border rounded p-3 bg-light">
+                    <div class="mb-2">
+                        <label class="form-label">Nom parcelle</label>
+                        <input type="text" name="parcelle_nom" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Superficie (ha)</label>
+                        <input type="number" step="any" name="parcelle_superficie" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Adresse parcelle</label>
+                        <input type="text" name="parcelle_adresse" class="form-control">
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-sm btn-success save-parcelle">Enregistrer la parcelle</button>
+                        <button type="button" class="btn btn-sm btn-danger remove-parcelle">Supprimer</button>
+                        <span class="ms-2 text-success parcelle-saved" style="display:none;">Enregistrée</span>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <button type="button" id="add-parcelle" class="btn btn-outline-primary btn-sm">Ajouter une parcelle</button>
+            </div>
+
+            <hr>
+            <h5 class="text-success">Récoltes (optionnel)</h5>
+            <div id="recoltes-container">
+                <div class="recolte-block mb-3 border rounded p-3 bg-light">
+                    <div class="mb-2">
+                        <label class="form-label">Fruit</label>
+                        <input type="text" name="recolte_fruit" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Quantité</label>
+                        <input type="number" step="any" name="recolte_quantite" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Date de récolte</label>
+                        <input type="date" name="recolte_date" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Parcelle (existante)</label>
+                        <select name="recolte_parcelle" class="form-select">
+                            <option value="">-- Choisir ou laisser vide --</option>
+                            {% for p in parcelles %}
+                                <option value="{{ p.id }}">{{ p.nom }}</option>
+                            {% endfor %}
+                            <!-- newly created parcelles will be referenced via 'new-<index>' in view -->
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-sm btn-success save-recolte">Enregistrer la récolte</button>
+                        <button type="button" class="btn btn-sm btn-danger remove-recolte">Supprimer</button>
+                        <span class="ms-2 text-success recolte-saved" style="display:none;">Enregistrée</span>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <button type="button" id="add-recolte" class="btn btn-outline-primary btn-sm">Ajouter une récolte</button>
+            </div>
+
+            <div class="d-grid gap-2 mt-3">
+                <button type="submit" class="btn btn-success">Ajouter</button>
+                <a href="{% url 'liste_producteurs' %}" class="btn btn-outline-secondary">Annuler</a>
+            </div>
+        </form>
+
+        <script>
+            // helper to clone parcelle block
+            function makeParcelleBlock() {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'parcelle-block mb-3 border rounded p-3 bg-light';
+                wrapper.innerHTML = `
+                    <div class="mb-2">
+                        <label class="form-label">Nom parcelle</label>
+                        <input type="text" name="parcelle_nom" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Superficie (ha)</label>
+                        <input type="number" step="any" name="parcelle_superficie" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Adresse parcelle</label>
+                        <input type="text" name="parcelle_adresse" class="form-control">
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-sm btn-danger remove-parcelle">Supprimer</button>
+                    </div>
+                `;
+                return wrapper;
+            }
+
+            function makeRecolteBlock() {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'recolte-block mb-3 border rounded p-3 bg-light';
+                wrapper.innerHTML = `
+                    <div class="mb-2">
+                        <label class="form-label">Fruit</label>
+                        <input type="text" name="recolte_fruit" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Quantité</label>
+                        <input type="number" step="any" name="recolte_quantite" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Date de récolte</label>
+                        <input type="date" name="recolte_date" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Parcelle (existante)</label>
+                        <select name="recolte_parcelle" class="form-select">
+                            <option value="">-- Choisir ou laisser vide --</option>
+                            {% for p in parcelles %}
+                                <option value="{{ p.id }}">{{ p.nom }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-sm btn-danger remove-recolte">Supprimer</button>
+                    </div>
+                `;
+                return wrapper;
+            }
+
+            document.addEventListener('click', function(e){
+                if(e.target && e.target.id === 'add-parcelle'){
+                    document.getElementById('parcelles-container').appendChild(makeParcelleBlock());
+                }
+                if(e.target && e.target.classList.contains('remove-parcelle')){
+                    e.target.closest('.parcelle-block').remove();
+                }
+                if(e.target && e.target.id === 'add-recolte'){
+                    document.getElementById('recoltes-container').appendChild(makeRecolteBlock());
+                }
+                if(e.target && e.target.classList.contains('remove-recolte')){
+                    e.target.closest('.recolte-block').remove();
+                }
+                // handle save parcelle on add page
+                if(e.target && e.target.classList && e.target.classList.contains('save-parcelle')){
+                    const block = e.target.closest('.parcelle-block');
+                    const nom = block.querySelector('input[name="parcelle_nom"]').value.trim();
+                    const superficie = block.querySelector('input[name="parcelle_superficie"]').value;
+                    const adresse = block.querySelector('input[name="parcelle_adresse"]').value;
+                    if(!nom){ alert('Le nom de la parcelle est requis'); return; }
+                    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                    // ensure producteur exists, otherwise create it first
+                    let producteurId = document.getElementById('producteur-id').value || '';
+                    function createParcelle(prodId){
+                        fetch('/producteurs/parcelles/ajouter/', {
+                            method: 'POST',
+                            headers: {'X-CSRFToken': csrftoken, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type':'application/x-www-form-urlencoded'},
+                            body: new URLSearchParams({nom: nom, superficie: superficie||'', adresse: adresse||'', producteur: prodId, ajax: '1'})
+                        }).then(r=>r.json()).then(data=>{
+                            if(data.id){
+                                e.target.disabled = true; e.target.style.display='none';
+                                const saved = block.querySelector('.parcelle-saved'); if(saved) saved.style.display='inline';
+                                // add option to all recolte selects
+                                document.querySelectorAll('select[name="recolte_parcelle"]').forEach(function(sel){ const opt=document.createElement('option'); opt.value=data.id; opt.textContent=data.nom; sel.appendChild(opt); });
+                            } else { alert('Erreur création parcelle'); }
+                        }).catch(err=>{ console.error(err); alert('Erreur réseau'); });
+                    }
+                    if(!producteurId){
+                        // create producteur first
+                        const nomP = document.querySelector('input[name="nom"]').value.trim();
+                        const prenomP = document.querySelector('input[name="prenom"]').value.trim();
+                        const adresseP = document.querySelector('input[name="adresse"]').value.trim();
+                        const telP = document.querySelector('input[name="telephone"]').value.trim();
+                        if(!nomP || !prenomP){ alert('Veuillez saisir au moins le nom et le prénom du producteur avant d\'enregistrer une parcelle.'); return; }
+                        fetch('/producteurs/ajouter/', {
+                            method: 'POST',
+                            headers: {'X-CSRFToken': csrftoken, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type':'application/x-www-form-urlencoded'},
+                            body: new URLSearchParams({nom: nomP, prenom: prenomP, adresse: adresseP, telephone: telP, ajax: '1'})
+                        }).then(r=>r.json()).then(data=>{
+                            if(data.id){ document.getElementById('producteur-id').value = data.id; createParcelle(data.id); }
+                            else alert('Erreur création producteur');
+                        }).catch(err=>{ console.error(err); alert('Erreur réseau'); });
+                    } else { createParcelle(producteurId); }
+                }
+
+                // handle save recolte on add page
+                if(e.target && e.target.classList && e.target.classList.contains('save-recolte')){
+                    const block = e.target.closest('.recolte-block');
+                    const fruit = block.querySelector('input[name="recolte_fruit"]').value.trim();
+                    const quant = block.querySelector('input[name="recolte_quantite"]').value;
+                    const date = block.querySelector('input[name="recolte_date"]').value;
+                    const parcSelect = block.querySelector('select[name="recolte_parcelle"]');
+                    const parcelleId = parcSelect ? parcSelect.value : '';
+                    if(!fruit){ alert('Le fruit est requis'); return; }
+                    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                    let producteurId = document.getElementById('producteur-id').value || '';
+                    function createRecolte(prodId){
+                        fetch('/producteurs/recoltes/ajouter/', {
+                            method: 'POST',
+                            headers: {'X-CSRFToken': csrftoken, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type':'application/x-www-form-urlencoded'},
+                            body: new URLSearchParams({fruit: fruit, quantite: quant||'', date_recolte: date||'', producteur: prodId, parcelle: parcelleId, ajax: '1'})
+                        }).then(r=>r.json()).then(data=>{
+                            if(data.id){ e.target.disabled=true; e.target.style.display='none'; const saved=block.querySelector('.recolte-saved'); if(saved) saved.style.display='inline'; }
+                            else alert('Erreur création récolte');
+                        }).catch(err=>{ console.error(err); alert('Erreur réseau'); });
+                    }
+                    if(!producteurId){
+                        // create producteur first (same as above)
+                        const nomP = document.querySelector('input[name="nom"]').value.trim();
+                        const prenomP = document.querySelector('input[name="prenom"]').value.trim();
+                        const adresseP = document.querySelector('input[name="adresse"]').value.trim();
+                        const telP = document.querySelector('input[name="telephone"]').value.trim();
+                        if(!nomP || !prenomP){ alert('Veuillez saisir au moins le nom et le prénom du producteur avant d\'enregistrer une récolte.'); return; }
+                        fetch('/producteurs/ajouter/', {
+                            method: 'POST',
+                            headers: {'X-CSRFToken': csrftoken, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type':'application/x-www-form-urlencoded'},
+                            body: new URLSearchParams({nom: nomP, prenom: prenomP, adresse: adresseP, telephone: telP, ajax: '1'})
+                        }).then(r=>r.json()).then(data=>{
+                            if(data.id){ document.getElementById('producteur-id').value = data.id; createRecolte(data.id); }
+                            else alert('Erreur création producteur');
+                        }).catch(err=>{ console.error(err); alert('Erreur réseau'); });
+                    } else { createRecolte(producteurId); }
+                }
+            });
+        </script>
+    </div>
+</div>
+{% endblock %}

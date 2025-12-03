@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ajouter Transformation{% endblock %}
+
+{% block content %}
+<div class="container">
+	<div class="card p-4 mx-auto mt-4" style="max-width:700px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+		<h1 class="h4 text-center text-success mb-4">Ajouter une Transformation</h1>
+		<form method="post">
+			{% csrf_token %}
+			<div class="mb-3">
+				<label class="form-label">Code Lot</label>
+				<input type="text" name="code_lot" class="form-control" required>
+			</div>
+			<div class="mb-3">
+				<label class="form-label">Récolte</label>
+				<select name="recolte" class="form-select" required>
+					<option value="">-- Choisir une récolte --</option>
+					{% if recoltes %}
+						{% for r in recoltes %}
+							<option value="{{ r.id }}">{{ r.fruit }} - {{ r.producteur.nom }} {{ r.producteur.prenom }}</option>
+						{% endfor %}
+					{% elif recolte %}
+						{% for r in recolte %}
+							<option value="{{ r.id }}">{{ r.fruit }} - {{ r.producteur.nom }} {{ r.producteur.prenom }}</option>
+						{% endfor %}
+					{% else %}
+						<option value="" disabled>Aucune récolte disponible</option>
+					{% endif %}
+				</select>
+			</div>
+			<div class="mb-3">
+				<label class="form-label">Étape</label>
+				<select name="etape" class="form-select" required>
+					<option value="LYOPHILISATION">Lyophilisation</option>
+					<option value="CONDITIONNEMENT">Conditionnement</option>
+					<option value="STOCKE">Stocké</option>
+				</select>
+			</div>
+			<div class="mb-3">
+				<label class="form-label">Quantité départ</label>
+				<input type="number" step="any" name="quantite_depart" class="form-control" required>
+			</div>
+			<div class="mb-3">
+				<label class="form-label">Quantité finale</label>
+				<input type="number" step="any" name="quantite_finale" class="form-control">
+			</div>
+			<div class="row">
+				<div class="col mb-3">
+					<label class="form-label">Date début</label>
+					<input type="date" name="date_debut" class="form-control" required>
+				</div>
+				<div class="col mb-3">
+					<label class="form-label">Date fin</label>
+					<input type="date" name="date_fin" class="form-control">
+				</div>
+			</div>
+
+			<div class="d-grid gap-2">
+				<button type="submit" class="btn btn-success">Ajouter</button>
+				<a href="{% url 'liste_transformations' %}" class="btn btn-outline-secondary">Annuler</a>
+			</div>
+		</form>
+	</div>
+</div>
+{% endblock %}
+			</div>

@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+{% block title %}Modifier Producteur{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm p-4 mx-auto" style="max-width:720px;">
+        <h1 class="h4 text-center text-success fw-bold mb-3">Modifier le Producteur</h1>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label">Nom</label>
+                <input type="text" name="nom" class="form-control" value="{{ producteur.nom }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Prénom</label>
+                <input type="text" name="prenom" class="form-control" value="{{ producteur.prenom }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Adresse</label>
+                <input type="text" name="adresse" class="form-control" value="{{ producteur.adresse }}">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Téléphone</label>
+                <input type="text" name="telephone" class="form-control" value="{{ producteur.telephone }}">
+            </div>
+
+            <hr>
+            <h5 class="text-success">Parcelles</h5>
+            <div id="parcelles-container">
+                {% for parcelle in parcelles %}
+                <div class="parcelle-block mb-3 border rounded p-3 bg-light">
+                    <input type="hidden" name="parcelle_id" value="{{ parcelle.id }}">
+                    <div class="mb-2">
+                        <label class="form-label">Nom parcelle</label>
+                        <input type="text" name="parcelle_nom" class="form-control" value="{{ parcelle.nom }}">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Superficie (ha)</label>
+                        <input type="number" step="any" name="parcelle_superficie" class="form-control" value="{{ parcelle.superficie }}">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Adresse parcelle</label>
+                        <input type="text" name="parcelle_adresse" class="form-control" value="{{ parcelle.adresse }}">
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input parcelle-delete" type="checkbox" name="parcelle_delete" value="{{ parcelle.id }}" id="parc-{{ parcelle.id }}">
+                        <label class="form-check-label text-danger" for="parc-{{ parcelle.id }}">Supprimer cette parcelle</label>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="mb-3">
+                <button type="button" id="add-parcelle" class="btn btn-outline-primary btn-sm">Ajouter une parcelle</button>
+            </div>
+
+            <hr>
+            <h5 class="text-success">Récoltes</h5>
+            <div id="recoltes-container">
+                {% for recolte in recoltes %}
+                <div class="recolte-block mb-3 border rounded p-3 bg-light">
+                    <input type="hidden" name="recolte_id" value="{{ recolte.id }}">
+                    <div class="mb-2">
+                        <label class="form-label">Fruit</label>
+                        <input type="text" name="recolte_fruit" class="form-control" value="{{ recolte.fruit }}">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Quantité</label>
+                        <input type="number" step="any" name="recolte_quantite" class="form-control" value="{{ recolte.quantite }}">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Date de récolte</label>
+                        <input type="date" name="recolte_date" class="form-control" value="{{ recolte.date_recolte|date:'Y-m-d' }}">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Parcelle (existante)</label>
+                        <select name="recolte_parcelle" class="form-select">
+                            <option value="">-- Choisir ou laisser vide --</option>
+                            {% for p in parcelles %}
+                                <option value="{{ p.id }}" {% if recolte.parcelle and recolte.parcelle.id == p.id %}selected{% endif %}>{{ p.nom }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input recolte-delete" type="checkbox" name="recolte_delete" value="{{ recolte.id }}" id="rec-{{ recolte.id }}">
+                        <label class="form-check-label text-danger" for="rec-{{ recolte.id }}">Supprimer cette récolte</label>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="mb-3">
+                <button type="button" id="add-recolte" class="btn btn-outline-primary btn-sm">Ajouter une récolte</button>
+            </div>
+
+            <div class="d-grid d-md-flex gap-2">
+                <button type="submit" class="btn btn-primary">Modifier</button>
+                <a href="{% url 'liste_producteurs' %}" class="btn btn-secondary">Annuler</a>
+            </div>
+        </form>
+
+        <script>
+            // clone empty templates from JS (simple versions)
+            function makeParcelleBlock() {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'parcelle-block mb-3 border rounded p-3 bg-light';
+                wrapper.innerHTML = `
+                    <input type="hidden" name="parcelle_id" value="">
+                    <div class="mb-2">
+                        <label class="form-label">Nom parcelle</label>
+                        <input type="text" name="parcelle_nom" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Superficie (ha)</label>
+                        <input type="number" step="any" name="parcelle_superficie" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Adresse parcelle</label>
+                        <input type="text" name="parcelle_adresse" class="form-control">
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input parcelle-delete" type="checkbox" name="parcelle_delete" value="" disabled>
+                        <label class="form-check-label text-danger">Supprimer cette parcelle</label>
+                    </div>
+                    <div class="mt-2">
+                        <button type="button" class="btn btn-sm btn-success save-parcelle">Enregistrer la parcelle</button>
+                        <span class="ms-2 text-success parcelle-saved" style="display:none;">Enregistrée</span>
+                    </div>
+                `;
+                return wrapper;
+            }
+
+            function makeRecolteBlock() {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'recolte-block mb-3 border rounded p-3 bg-light';
+                wrapper.innerHTML = `
+                    <input type="hidden" name="recolte_id" value="">
+                    <div class="mb-2">
+                        <label class="form-label">Fruit</label>
+                        <input type="text" name="recolte_fruit" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Quantité</label>
+                        <input type="number" step="any" name="recolte_quantite" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Date de récolte</label>
+                        <input type="date" name="recolte_date" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Parcelle (existante)</label>
+                        <select name="recolte_parcelle" class="form-select">
+                            <option value="">-- Choisir ou laisser vide --</option>
+                            {% for p in parcelles %}
+                                <option value="{{ p.id }}">{{ p.nom }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input recolte-delete" type="checkbox" name="recolte_delete" value="" disabled>
+                        <label class="form-check-label text-danger">Supprimer cette récolte</label>
+                    </div>
+                    <div class="mt-2">
+                        <button type="button" class="btn btn-sm btn-success save-recolte">Enregistrer la récolte</button>
+                        <span class="ms-2 text-success recolte-saved" style="display:none;">Enregistrée</span>
+                    </div>
+                `;
+                return wrapper;
+            }
+
+            document.addEventListener('click', function(e){
+                if(e.target && e.target.id === 'add-parcelle'){
+                    document.getElementById('parcelles-container').appendChild(makeParcelleBlock());
+                }
+                if(e.target && e.target.id === 'add-recolte'){
+                    document.getElementById('recoltes-container').appendChild(makeRecolteBlock());
+                }
+                // handle save parcelle via AJAX
+                if(e.target && e.target.classList && e.target.classList.contains('save-parcelle')){
+                    const block = e.target.closest('.parcelle-block');
+                    const nom = block.querySelector('input[name="parcelle_nom"]').value.trim();
+                    const superficie = block.querySelector('input[name="parcelle_superficie"]').value;
+                    const adresse = block.querySelector('input[name="parcelle_adresse"]').value;
+                    if(!nom){ alert('Le nom de la parcelle est requis'); return; }
+                    // CSRF
+                    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                    fetch('/producteurs/parcelles/ajouter/', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: new URLSearchParams({
+                            'nom': nom,
+                            'superficie': superficie || '',
+                            'adresse': adresse || '',
+                            'producteur': '{{ producteur.id }}',
+                            'ajax': '1'
+                        })
+                    }).then(r => r.json()).then(data => {
+                        if(data.id){
+                            // set hidden id, enable delete checkbox
+                            block.querySelector('input[name="parcelle_id"]').value = data.id;
+                            const del = block.querySelector('.parcelle-delete');
+                            if(del){ del.value = data.id; del.disabled = false; }
+                            // update all recolte selects
+                            document.querySelectorAll('select[name="recolte_parcelle"]').forEach(function(sel){
+                                const opt = document.createElement('option'); opt.value = data.id; opt.textContent = data.nom; sel.appendChild(opt);
+                            });
+                            e.target.disabled = true;
+                            e.target.style.display = 'none';
+                            const saved = block.querySelector('.parcelle-saved'); if(saved) saved.style.display = 'inline';
+                        } else {
+                            alert('Erreur lors de la création de la parcelle');
+                        }
+                    }).catch(err=>{ console.error(err); alert('Erreur réseau'); });
+                }
+
+                // handle save recolte via AJAX
+                if(e.target && e.target.classList && e.target.classList.contains('save-recolte')){
+                    const block = e.target.closest('.recolte-block');
+                    const fruit = block.querySelector('input[name="recolte_fruit"]').value.trim();
+                    const quant = block.querySelector('input[name="recolte_quantite"]').value;
+                    const date = block.querySelector('input[name="recolte_date"]').value;
+                    const parcSelect = block.querySelector('select[name="recolte_parcelle"]');
+                    const parcelleId = parcSelect ? parcSelect.value : '';
+                    if(!fruit){ alert('Le fruit est requis'); return; }
+                    if(!parcelleId){ alert('Veuillez sélectionner une parcelle existante pour enregistrer la récolte'); return; }
+                    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                    fetch('/producteurs/recoltes/ajouter/', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: new URLSearchParams({
+                            'fruit': fruit,
+                            'quantite': quant || '',
+                            'date_recolte': date || '',
+                            'producteur': '{{ producteur.id }}',
+                            'parcelle': parcelleId,
+                            'ajax': '1'
+                        })
+                    }).then(r => r.json()).then(data => {
+                        if(data.id){
+                            block.querySelector('input[name="recolte_id"]').value = data.id;
+                            e.target.disabled = true;
+                            e.target.style.display = 'none';
+                            const saved = block.querySelector('.recolte-saved'); if(saved) saved.style.display = 'inline';
+                        } else {
+                            alert('Erreur lors de la création de la récolte');
+                        }
+                    }).catch(err=>{ console.error(err); alert('Erreur réseau'); });
+                }
+            });
+        </script>
+    </div>
+</div>
+{% endblock %}

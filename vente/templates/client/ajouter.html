@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ajouter Client{% endblock %}
+
+{% block content %}
+<div class="container">
+	<div class="card p-4 mx-auto mt-4" style="max-width:600px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+		<h1 class="h4 text-center text-success mb-4">Ajouter un Client</h1>
+		<form method="post">
+			{% csrf_token %}
+			<div class="mb-3">
+				<label class="form-label">Nom</label>
+				<input type="text" name="nom" class="form-control" required>
+			</div>
+			<div class="mb-3">
+				<label class="form-label">Prénom</label>
+				<input type="text" name="prenom" class="form-control" required>
+			</div>
+			<div class="mb-3">
+				<label class="form-label">Téléphone</label>
+				<input type="text" name="telephone" class="form-control">
+			</div>
+			<div class="mb-3">
+				<label class="form-label">Adresse</label>
+				<input type="text" name="adresse" class="form-control">
+			</div>
+			<div class="mb-3">
+				<label class="form-label">Email</label>
+				<input type="email" name="email" class="form-control">
+			</div>
+			<div class="d-grid gap-2">
+				<button type="submit" class="btn btn-success">Ajouter</button>
+				<a href="{% url 'liste_clients' %}" class="btn btn-outline-secondary">Annuler</a>
+			</div>
+		</form>
+	</div>
+</div>
+{% endblock %}

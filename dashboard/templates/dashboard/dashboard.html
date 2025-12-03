@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - AgroData{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>Tableau de bord</h2>
+            <p class="text-muted">Vue d'ensemble rapide des activités et KPIs</p>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        {% for key, value in counts.items %}
+        <div class="col-sm-6 col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title text-uppercase text-muted">{{ key|capfirst }}</h6>
+                    <h3 class="card-text">{{ value }}</h3>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="card-title mb-0">Top produits par chiffre d'affaires</h5>
+                        <form id="periodForm" method="get" class="d-flex align-items-center">
+                            <select name="period" class="form-select form-select-sm me-2">
+                                <option value="7d" {% if period == '7d' %}selected{% endif %}>7 jours</option>
+                                <option value="30d" {% if period == '30d' %}selected{% endif %}>30 jours</option>
+                                <option value="90d" {% if period == '90d' %}selected{% endif %}>90 jours</option>
+                                <option value="365d" {% if period == '365d' %}selected{% endif %}>1 an</option>
+                                <option value="custom" {% if start_date and end_date %}selected{% endif %}>Période personnalisée</option>
+                            </select>
+                            <input type="date" name="start" class="form-control form-control-sm me-1" value="{% if start_date %}{{ start_date }}{% endif %}">
+                            <input type="date" name="end" class="form-control form-control-sm me-1" value="{% if end_date %}{{ end_date }}{% endif %}">
+                            <button class="btn btn-sm btn-primary" type="submit">Appliquer</button>
+                        </form>
+                    </div>
+                    <canvas id="topProductsChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Ventes récentes</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Client</th>
+                                    <th>Produit</th>
+                                    <th class="text-end">Montant</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for v in recent_ventes %}
+                                <tr>
+                                    <td>{{ v.date_vente }}</td>
+                                    <td>{{ v.client }}</td>
+                                    <td>{{ v.stock.produit }}</td>
+                                    <td class="text-end">{{ v.montant_total }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4">Aucune vente récente.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Ventes : évolution mensuelle (12 mois)</h5>
+                    <canvas id="monthlySalesChart" height="140"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Stocks par produit</h5>
+                    <canvas id="stockByProductChart" height="140"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Transformations par étape</h5>
+                    <canvas id="transformationsStepChart" height="140"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Récoltes par fruit (kg)</h5>
+                    <canvas id="harvestsByFruitChart" height="140"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Top clients par chiffre d'affaires</h5>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr><th>Client</th><th class="text-end">Chiffre d'affaires</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for c in top_clients %}
+                                <tr><td>{{ c.client }}</td><td class="text-end">{{ c.revenue }}</td></tr>
+                            {% empty %}
+                                <tr><td colspan="2">Aucun client</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Ventes récentes</h5>
+                    <div class="small">
+                        {% for v in recent_ventes %}
+                            <div class="mb-2">
+                                <strong>{{ v.stock.produit }}</strong>
+                                <div class="text-muted small">{{ v.client }} — {{ v.date_vente }} — <span class="float-end">{{ v.montant_total }}</span></div>
+                            </div>
+                        {% empty %}
+                            <div>Aucune vente récente.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    (function() {
+        // Top products chart (sales_by_product)
+        const topLabels = {{ sales_labels_json|safe }};
+        const topData = {{ sales_revenue_json|safe }};
+
+        const topCtx = document.getElementById('topProductsChart').getContext('2d');
+        new Chart(topCtx, {
+            type: 'bar',
+            data: {
+                labels: topLabels,
+                datasets: [{
+                    label: 'Chiffre d\'affaires',
+                    data: topData,
+                    backgroundColor: 'rgba(46,125,50,0.8)'
+                }]
+            },
+            options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        });
+
+        // Monthly sales chart
+        const monthlyLabels = {{ monthly_labels_json|safe }};
+        const monthlyValues = {{ monthly_values_json|safe }};
+        const monthlyCtx = document.getElementById('monthlySalesChart').getContext('2d');
+        new Chart(monthlyCtx, {
+            type: 'line',
+            data: { labels: monthlyLabels, datasets: [{ label: 'Ventes mensuelles', data: monthlyValues, borderColor: 'rgba(46,125,50,0.9)', backgroundColor: 'rgba(46,125,50,0.15)', fill: true }] },
+            options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        });
+
+        // Stock by product chart
+        const stockLabels = {{ stock_labels_json|safe }};
+        const stockValues = {{ stock_values_json|safe }};
+        const stockCtx = document.getElementById('stockByProductChart').getContext('2d');
+        new Chart(stockCtx, {
+            type: 'bar',
+            data: { labels: stockLabels, datasets: [{ label: 'Stock disponible', data: stockValues, backgroundColor: 'rgba(75,192,192,0.7)' }] },
+            options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        });
+
+        // Transformations by step (doughnut)
+        const transLabels = {{ trans_labels_json|safe }};
+        const transValues = {{ trans_values_json|safe }};
+        const transCtx = document.getElementById('transformationsStepChart').getContext('2d');
+        new Chart(transCtx, {
+            type: 'doughnut',
+            data: { labels: transLabels, datasets: [{ data: transValues, backgroundColor: ['#4caf50','#ff9800','#2196f3'] }] },
+            options: { responsive: true }
+        });
+
+        // Harvests by fruit (pie)
+        const harvestLabels = {{ harvest_labels_json|safe }};
+        const harvestValues = {{ harvest_values_json|safe }};
+        const harvestCtx = document.getElementById('harvestsByFruitChart').getContext('2d');
+        new Chart(harvestCtx, {
+            type: 'bar',
+            data: { labels: harvestLabels, datasets: [{ label: 'Quantité récoltée', data: harvestValues, backgroundColor: 'rgba(255,159,64,0.8)' }] },
+            options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        });
+
+    })();
+</script>
+
+{% endblock %}

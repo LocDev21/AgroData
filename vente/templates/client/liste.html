@@ -1,0 +1,48 @@
+
+{% extends 'base.html' %}
+{% block title %}Liste des Clients{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+	<h1 class="text-center mb-4 fw-bold text-success">Liste des Clients</h1>
+
+	<div class="text-center mb-3">
+		<a href="{% url 'ajouter_client' %}" class="btn btn-primary btn-lg shadow-sm">
+			<i class="lni lni-plus"></i> Ajouter un client
+		</a>
+	</div>
+
+	<div class="table-responsive shadow-sm rounded">
+		<table class="table table-striped table-hover align-middle">
+			<thead class="table-success text-white" style="background-color: #2E7D32;">
+				<tr>
+					<th>Nom</th>
+					<th>Prénom</th>
+					<th>Téléphone</th>
+					<th>Adresse</th>
+					<th>Email</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for client in clients %}
+				<tr>
+					<td>{{ client.nom }}</td>
+					<td>{{ client.prenom }}</td>
+					<td>{{ client.telephone }}</td>
+					<td>{{ client.adresse }}</td>
+					<td>{{ client.email }}</td>
+					<td>
+						<a href="{% url 'details_client' client.id %}" class="btn btn-info btn-sm me-1">Voir</a>
+						<a href="{% url 'modifier_client' client.id %}" class="btn btn-warning btn-sm me-1">Modifier</a>
+						<a href="{% url 'supprimer_client' client.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Voulez-vous vraiment supprimer ce client ?');">Supprimer</a>
+					</td>
+				</tr>
+				{% empty %}
+				<tr><td colspan="6" class="text-center text-muted">Aucun client trouvé</td></tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+</div>
+{% endblock %}

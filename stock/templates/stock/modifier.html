@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Modifier Stock{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+	<div class="card shadow-sm p-4 mx-auto" style="max-width:720px;">
+		<h1 class="h4 text-center text-success fw-bold mb-3">Modifier le Stock</h1>
+
+		<form method="post">
+			{% csrf_token %}
+			<div class="mb-3">
+				<label class="form-label">Lot (Transformation)</label>
+				<select name="lot" class="form-select" required>
+					<option value="">-- Choisir un lot --</option>
+					{% for t in transformations %}
+						<option value="{{ t.id }}" {% if stock.lot and t.id == stock.lot.id %}selected{% endif %}>{{ t.code_lot }}</option>
+					{% endfor %}
+				</select>
+			</div>
+
+			<div class="mb-3">
+				<label class="form-label">Produit</label>
+				<input type="text" name="produit" class="form-control" value="{{ stock.produit }}" required>
+			</div>
+
+			<div class="mb-3">
+				<label class="form-label">Quantité disponible</label>
+				<input type="number" step="any" name="quantite_disponible" class="form-control" value="{{ stock.quantite_disponible }}" required>
+			</div>
+
+			<div class="mb-3">
+				<label class="form-label">Unité de mesure</label>
+				<select name="unite_mesure" class="form-select" required>
+					<option value="KG" {% if stock.unite_mesure == 'KG' %}selected{% endif %}>Kg</option>
+					<option value="TONNE" {% if stock.unite_mesure == 'TONNE' %}selected{% endif %}>Tonne</option>
+					<option value="SACHET" {% if stock.unite_mesure == 'SACHET' %}selected{% endif %}>Sachet</option>
+					<option value="BOITE" {% if stock.unite_mesure == 'BOITE' %}selected{% endif %}>Boite</option>
+				</select>
+			</div>
+
+			<div class="mb-3">
+				<label class="form-label">Date mise à jour</label>
+				<input type="date" name="date_mise_a_jour" class="form-control" value="{{ stock.date_mise_a_jour }}" required>
+			</div>
+
+			<div class="d-grid d-md-flex gap-2">
+				<button type="submit" class="btn btn-primary">Modifier</button>
+				<a href="{% url 'liste_stocks' %}" class="btn btn-secondary">Annuler</a>
+			</div>
+		</form>
+	</div>
+</div>
+{% endblock %}

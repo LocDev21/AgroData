@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% block title %}Liste des Producteurs{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h1 class="text-center mb-4 fw-bold text-success">Liste des Producteurs</h1>
+
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-6 mb-2">
+            <a href="{% url 'ajouter_producteur' %}" class="btn btn-primary btn-lg shadow-sm">
+                <i class="lni lni-plus"></i> Ajouter un producteur
+            </a>
+        </div>
+        <div class="col-md-6">
+            <form method="get" class="row g-2 align-items-center">
+                <div class="col-auto" style="min-width:220px;">
+                    <select name="field" class="form-select" aria-label="Champ de recherche">
+                        <option value="" {% if not field %}selected{% endif %}>Tous les champs</option>
+                        <option value="nom" {% if field == 'nom' %}selected{% endif %}>Nom</option>
+                        <option value="prenom" {% if field == 'prenom' %}selected{% endif %}>Prénom</option>
+                        <option value="adresse" {% if field == 'adresse' %}selected{% endif %}>Adresse</option>
+                        <option value="telephone" {% if field == 'telephone' %}selected{% endif %}>Téléphone</option>
+                    </select>
+                </div>
+                <div class="col-auto" style="flex:1;">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="lni lni-search"></i></span>
+                        <input id="search-input" name="q" class="form-control" type="search" placeholder="Rechercher nom / prénom / téléphone" value="{{ query|default:'' }}" aria-label="Recherche">
+                        <button id="clear-search" type="button" class="btn btn-outline-secondary" title="Effacer la recherche">×</button>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="dropdown" data-bs-auto-close="outside">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="fruitsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Fruits
+                        </button>
+                        <div class="dropdown-menu p-3" aria-labelledby="fruitsDropdown" style="max-height:220px; overflow:auto; min-width:220px;">
+                            {% if fruits_choices %}
+                                {% for f in fruits_choices %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="fruits" value="{{ f }}" id="fruit_{{ forloop.counter }}" {% if f in selected_fruits %}checked{% endif %}>
+                                        <label class="form-check-label" for="fruit_{{ forloop.counter }}">{{ f }}</label>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-muted small">Aucun fruit</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="dropdown" data-bs-auto-close="outside">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="parcellesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Parcelles
+                        </button>
+                        <div class="dropdown-menu p-2" aria-labelledby="parcellesDropdown">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="has_parcelle" id="parcelles_all" value="" {% if not has_parcelle %}checked{% endif %}>
+                                <label class="form-check-label" for="parcelles_all">Tous</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="has_parcelle" id="parcelles_with" value="1" {% if has_parcelle == '1' %}checked{% endif %}>
+                                <label class="form-check-label" for="parcelles_with">Avec</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="has_parcelle" id="parcelles_without" value="0" {% if has_parcelle == '0' %}checked{% endif %}>
+                                <label class="form-check-label" for="parcelles_without">Sans</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="dropdown" data-bs-auto-close="outside">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="recoltesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Récoltes
+                        </button>
+                        <div class="dropdown-menu p-2" aria-labelledby="recoltesDropdown">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="has_recolte" id="recoltes_all" value="" {% if not has_recolte %}checked{% endif %}>
+                                <label class="form-check-label" for="recoltes_all">Tous</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="has_recolte" id="recoltes_with" value="1" {% if has_recolte == '1' %}checked{% endif %}>
+                                <label class="form-check-label" for="recoltes_with">Avec</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="has_recolte" id="recoltes_without" value="0" {% if has_recolte == '0' %}checked{% endif %}>
+                                <label class="form-check-label" for="recoltes_without">Sans</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-outline-success" type="submit">Filtrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="table-responsive shadow-sm rounded">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-success text-white" style="background-color: #2E7D32;">
+                <tr>
+                    <th>Nom</th>
+                    <th>Prénom</th>
+                    <th>Adresse</th>
+                    <th>Téléphone</th>
+                    <th>Parcelles</th>
+                    <th>Récoltes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for producteur in producteurs %}
+                <tr>
+                    <td>{{ producteur.nom }}</td>
+                    <td>{{ producteur.prenom }}</td>
+                    <td>{{ producteur.adresse }}</td>
+                    <td>{{ producteur.telephone }}</td>
+                    <td>
+                        {% with parcelles=producteur.parcelle_set.all %}
+                            {% if parcelles %}
+                                <small class="text-muted">{{ parcelles|length }} parcelle(s)</small>
+                                <ul class="mb-0">
+                                    {% for p in parcelles|slice:":2" %}
+                                        <li class="small">{{ p.nom }}</li>
+                                    {% endfor %}
+                                    {% if parcelles|length > 2 %}
+                                        <li class="small text-muted">(+{{ parcelles|length|add:"-2" }} autres)</li>
+                                    {% endif %}
+                                </ul>
+                            {% else %}
+                                <small class="text-muted">—</small>
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td>
+                        {% with recoltes=producteur.recolte_set.all %}
+                            {% if recoltes %}
+                                <small class="text-muted">{{ recoltes|length }} récolte(s)</small>
+                                <ul class="mb-0">
+                                    {% for r in recoltes|slice:":2" %}
+                                        <li class="small">{{ r.fruit }} ({{ r.quantite }})</li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <small class="text-muted">—</small>
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td>
+                        <a href="{% url 'details_producteur' producteur.id %}" class="btn btn-info btn-sm me-1">Voir</a>
+                        <a href="{% url 'modifier_producteur' producteur.id %}" class="btn btn-warning btn-sm me-1">Modifier</a>
+                        <a href="{% url 'supprimer_producteur' producteur.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Voulez-vous vraiment supprimer ce producteur ?');">Supprimer</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center text-muted">Aucun producteur trouvé</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-3">
+        <ul class="pagination justify-content-center">
+            {% with request.GET.urlencode as qstr %}{% endwith %}
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if qstr %}{{ qstr }}&{% endif %}page={{ page_obj.previous_page_number }}">&laquo; Précédent</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">&laquo; Précédent</span></li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?{% if qstr %}{{ qstr }}&{% endif %}page={{ num }}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if qstr %}{{ qstr }}&{% endif %}page={{ page_obj.next_page_number }}">Suivant &raquo;</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Suivant &raquo;</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+<script>
+// Update dropdown button labels to reflect selections
+document.addEventListener('DOMContentLoaded', function(){
+    function updateFruitsLabel(){
+        var btn = document.getElementById('fruitsDropdown');
+        var checks = document.querySelectorAll('input[name="fruits"]:checked');
+        if(!btn) return;
+        if(checks.length === 0) btn.textContent = 'Fruits';
+        else if(checks.length === 1) btn.textContent = checks[0].closest('label') ? checks[0].closest('label').textContent.trim() : checks[0].value;
+        else btn.textContent = checks.length + ' sélectionnés';
+    }
+    function updateRadioLabel(dropId, name){
+        var btn = document.getElementById(dropId);
+        var radios = document.querySelectorAll('input[name="'+name+'"]');
+        if(!btn) return;
+        var sel = Array.from(radios).find(r => r.checked);
+        if(!sel) btn.textContent = btn.textContent.split('\n')[0];
+        else{
+            var label = document.querySelector('label[for="'+sel.id+'"]');
+            btn.textContent = label ? label.textContent.trim() : sel.value || btn.textContent;
+        }
+    }
+
+    // attach events
+    document.querySelectorAll('input[name="fruits"]').forEach(function(ch){ ch.addEventListener('change', updateFruitsLabel); });
+    document.querySelectorAll('input[name="has_parcelle"]').forEach(function(r){ r.addEventListener('change', function(){ updateRadioLabel('parcellesDropdown','has_parcelle'); }); });
+    document.querySelectorAll('input[name="has_recolte"]').forEach(function(r){ r.addEventListener('change', function(){ updateRadioLabel('recoltesDropdown','has_recolte'); }); });
+
+    // initial update
+    updateFruitsLabel();
+    updateRadioLabel('parcellesDropdown','has_parcelle');
+    updateRadioLabel('recoltesDropdown','has_recolte');
+
+    // clear search button
+    var clearBtn = document.getElementById('clear-search');
+    var searchInput = document.getElementById('search-input');
+    if(clearBtn && searchInput){
+        clearBtn.addEventListener('click', function(){ searchInput.value = ''; searchInput.focus(); });
+    }
+});
+</script>
+{% endblock %}

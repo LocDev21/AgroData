@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Modifier Client{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+	<div class="card shadow-sm p-4 mx-auto" style="max-width:720px;">
+		<h1 class="h4 text-center text-success fw-bold mb-3">Modifier le Client</h1>
+
+		<form method="post">
+			{% csrf_token %}
+			<div class="mb-3">
+				<label class="form-label">Nom</label>
+				<input type="text" name="nom" class="form-control" value="{{ client.nom }}" required>
+			</div>
+
+			<div class="mb-3">
+				<label class="form-label">Prénom</label>
+				<input type="text" name="prenom" class="form-control" value="{{ client.prenom }}" required>
+			</div>
+
+			<div class="mb-3">
+				<label class="form-label">Téléphone</label>
+				<input type="text" name="telephone" class="form-control" value="{{ client.telephone }}">
+			</div>
+
+			<div class="mb-3">
+				<label class="form-label">Adresse</label>
+				<input type="text" name="adresse" class="form-control" value="{{ client.adresse }}">
+			</div>
+
+			<div class="mb-3">
+				<label class="form-label">Email</label>
+				<input type="email" name="email" class="form-control" value="{{ client.email }}">
+			</div>
+
+			<div class="d-grid d-md-flex gap-2">
+				<button type="submit" class="btn btn-primary">Modifier</button>
+				<a href="{% url 'liste_clients' %}" class="btn btn-secondary">Annuler</a>
+			</div>
+		</form>
+	</div>
+</div>
+{% endblock %}

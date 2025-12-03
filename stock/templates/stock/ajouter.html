@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ajouter Stock{% endblock %}
+
+{% block content %}
+<div class="container">
+	<div class="card p-4 mx-auto mt-4" style="max-width:600px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+		<h1 class="h4 text-center text-success mb-4">Ajouter au Stock</h1>
+		<form method="post">
+			{% csrf_token %}
+			<div class="mb-3">
+				<label class="form-label">Lot (Transformation)</label>
+				<select name="lot" class="form-select" required>
+					<option value="">-- Choisir un lot --</option>
+					{% for t in transformations %}
+						<option value="{{ t.id }}">{{ t.code_lot }}</option>
+					{% endfor %}
+				</select>
+			</div>
+			<div class="mb-3">
+				<label class="form-label">Produit</label>
+				<input type="text" name="produit" class="form-control" required>
+			</div>
+			<div class="mb-3">
+				<label class="form-label">Quantité disponible</label>
+				<input type="number" step="any" name="quantite_disponible" class="form-control" required>
+			</div>
+			<div class="mb-3">
+				<label class="form-label">Unité de mesure</label>
+				<select name="unite_mesure" class="form-select" required>
+					<option value="KG">Kg</option>
+					<option value="TONNE">Tonne</option>
+					<option value="SACHET">Sachet</option>
+					<option value="BOITE">Boite</option>
+				</select>
+			</div>
+			<div class="mb-3">
+				<label class="form-label">Date mise à jour</label>
+				<input type="date" name="date_mise_a_jour" class="form-control" required>
+			</div>
+
+			<div class="d-grid gap-2">
+				<button type="submit" class="btn btn-success">Ajouter</button>
+				<a href="{% url 'liste_stocks' %}" class="btn btn-outline-secondary">Annuler</a>
+			</div>
+		</form>
+	</div>
+</div>
+{% endblock %}

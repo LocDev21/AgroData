@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% block title %}Modifier Vente{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+	<div class="card shadow-sm p-4 mx-auto" style="max-width:720px;">
+		<h1 class="h4 text-center text-success fw-bold mb-3">Modifier la Vente</h1>
+
+		<form method="post">
+			{% csrf_token %}
+			<div class="mb-3">
+				<label class="form-label">Client</label>
+				<select name="client" class="form-select" required>
+					{% for c in clients %}
+						<option value="{{ c.id }}" {% if vente.client and c.id == vente.client.id %}selected{% endif %}>{{ c.nom }} {{ c.prenom }}</option>
+					{% endfor %}
+				</select>
+			</div>
+
+			<div class="mb-2">
+				<button class="btn btn-sm btn-outline-secondary" type="button" id="toggle-edit-client">Modifier les informations du client</button>
+			</div>
+			<div id="edit-client-form" class="card card-body mb-3" style="display:none;">
+				<div class="row g-2">
+					<div class="col-md-6">
+						<input type="text" name="client_nom" class="form-control" placeholder="Nom" value="{{ vente.client.nom }}">
+					</div>
+					<div class="col-md-6">
+						<input type="text" name="client_prenom" class="form-control" placeholder="Prénom" value="{{ vente.client.prenom }}">
+					</div>
+					<div class="col-md-6">
+						<input type="text" name="client_telephone" class="form-control" placeholder="Téléphone" value="{{ vente.client.telephone }}">
+					</div>
+					<div class="col-md-6">
+						<input type="email" name="client_email" class="form-control" placeholder="Email" value="{{ vente.client.email }}">
+					</div>
+					<div class="col-12">
+						<input type="text" name="client_adresse" class="form-control" placeholder="Adresse" value="{{ vente.client.adresse }}">
+					</div>
+				</div>
+			</div>
+
+			<div class="mb-3">
+				<label class="form-label">Stock (Produit)</label>
+				<select name="stock" class="form-select" required>
+					{% for s in stocks %}
+						<option value="{{ s.id }}" {% if vente.stock and s.id == vente.stock.id %}selected{% endif %}>{{ s.produit }} - {{ s.quantite_disponible }} {{ s.unite_mesure }}</option>
+					{% endfor %}
+				</select>
+			</div>
+
+			<div class="mb-3">
+				<label class="form-label">Quantité vendue</label>
+				<input type="number" step="any" name="quantite_vendue" class="form-control" value="{{ vente.quantite_vendue }}" required>
+			</div>
+
+			<div class="mb-3">
+				<label class="form-label">Prix unitaire</label>
+				<input type="number" step="any" name="prix_unitaire" class="form-control" value="{{ vente.prix_unitaire }}" required>
+			</div>
+
+			<div class="mb-3">
+				<label class="form-label">Date de vente</label>
+				<input type="date" name="date_vente" class="form-control" value="{{ vente.date_vente|date:'Y-m-d' }}" required>
+			</div>
+
+			<div class="mb-3">
+				<label class="form-label">Montant total</label>
+				<input type="number" step="any" name="montant_total" id="montant_total" class="form-control" value="{{ vente.montant_total }}" readonly>
+			</div>
+
+			<div class="form-check mb-3">
+				<input class="form-check-input" type="checkbox" value="1" id="strict-stock-checkbox" name="strict_stock" {% if request.POST.strict_stock or False %}checked{% endif %}>
+				<label class="form-check-label" for="strict-stock-checkbox">Refuser la modification si stock insuffisant</label>
+			</div>
+
+			<div class="mb-3 form-check">
+				<input class="form-check-input" type="checkbox" value="1" id="create-facture-checkbox" name="create_facture" {% if vente.facture_set.all|length > 0 %}checked{% endif %}>
+				<label class="form-check-label" for="create-facture-checkbox">Générer / Modifier la facture liée</label>
+			</div>
+			{% with facture=vente.facture_set.all.0 %}
+			<div id="facture-block" style="display:none;" class="border rounded p-3 mb-3">
+				<div class="mb-2">
+					<label class="form-label">Numéro facture</label>
+					<input type="text" name="numero_facture" class="form-control" value="{% if facture %}{{ facture.numero_facture }}{% endif %}">
+				</div>
+				<div class="row g-2">
+					<div class="col-md-6">
+						<label class="form-label">Mode paiement</label>
+						<select name="mode_paiement" class="form-select">
+							<option value="LIQUIDE" {% if facture and facture.mode_paiement == 'LIQUIDE' %}selected{% endif %}>Liquide</option>
+							<option value="OM" {% if facture and facture.mode_paiement == 'OM' %}selected{% endif %}>Orange Money</option>
+							<option value="MOMO" {% if facture and facture.mode_paiement == 'MOMO' %}selected{% endif %}>Mobile Money</option>
+							<option value="PAYCARD" {% if facture and facture.mode_paiement == 'PAYCARD' %}selected{% endif %}>Paycard</option>
+						</select>
+					</div>
+					<div class="col-md-6">
+						<label class="form-label">Statut</label>
+						<select name="statut" class="form-select">
+							<option value="PAYER" {% if facture and facture.statut == 'PAYER' %}selected{% endif %}>Payer</option>
+							<option value="ATTENTE" {% if facture and facture.statut == 'ATTENTE' %}selected{% endif %}>En Attente</option>
+						</select>
+					</div>
+				</div>
+				<div class="row g-2 mt-2">
+					<div class="col-md-6">
+						<label class="form-label">Montant facture</label>
+						<input type="number" step="any" name="montant" id="facture_montant" class="form-control" value="{% if facture %}{{ facture.montant }}{% else %}{{ vente.montant_total }}{% endif %}" readonly>
+					</div>
+					<div class="col-md-6">
+						<label class="form-label">Date émission</label>
+						<input type="date" name="date_emission" class="form-control" value="{% if facture %}{{ facture.date_emission|date:'Y-m-d' }}{% else %}{{ vente.date_vente|date:'Y-m-d' }}{% endif %}">
+					</div>
+				</div>
+			</div>
+			{% endwith %}
+
+			<div class="d-grid d-md-flex gap-2">
+				<button type="submit" class="btn btn-primary">Modifier</button>
+				<a href="{% url 'liste_ventes' %}" class="btn btn-secondary">Annuler</a>
+			</div>
+		</form>
+
+	<script>
+	// Toggle edit client form
+	document.getElementById('toggle-edit-client').addEventListener('click', function(){
+		const f = document.getElementById('edit-client-form');
+		f.style.display = f.style.display === 'none' ? 'block' : 'none';
+	});
+
+	// Toggle facture block
+	const factureCheckbox = document.getElementById('create-facture-checkbox');
+	const factureBlock = document.getElementById('facture-block');
+	if(factureCheckbox){
+		// show if there is a facture already
+		try{
+			const hasFacture = {% if venta.facture_set.all|length > 0 %}true{% else %}false{% endif %};
+			if(hasFacture) factureBlock.style.display = 'block';
+		} catch(e) { /* template fallback */ }
+		factureCheckbox.addEventListener('change', function(){
+			factureBlock.style.display = this.checked ? 'block' : 'none';
+		});
+	}
+
+		// compute montant total and update facture amount
+		function computeTotal(){
+			const q = parseFloat(document.querySelector('input[name="quantite_vendue"]').value || 0);
+			const p = parseFloat(document.querySelector('input[name="prix_unitaire"]').value || 0);
+			const total = (isNaN(q) || isNaN(p)) ? 0 : q * p;
+			const totalInput = document.getElementById('montant_total');
+			if(totalInput) totalInput.value = total ? total.toFixed(2) : '';
+			const factInput = document.getElementById('facture_montant');
+			if(factInput) factInput.value = total ? total.toFixed(2) : '';
+		}
+		document.querySelector('input[name="quantite_vendue"]').addEventListener('input', computeTotal);
+		document.querySelector('input[name="prix_unitaire"]').addEventListener('input', computeTotal);
+		// initialize
+		computeTotal();
+	</script>
+	</div>
+</div>
+{% endblock %}

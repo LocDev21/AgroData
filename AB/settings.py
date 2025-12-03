@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +22,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-=3fj85-g_j7ss(+^eo=i3ly3zsj=w95(1w0^gfg0#@-&+n%!d)'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-=3fj85-g_j7ss(+^eo=i3ly3zsj=w95(1w0^gfg0#@-&+n%!d)')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() in ('true', '1', 't')
 
-ALLOWED_HOSTS = []
+# Allow hosts from env (comma separated) or fallback to localhost for local dev
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost').split(',')
 
 
 # Application definition
@@ -49,6 +52,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -86,6 +90,13 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# If a DATABASE_URL env var is provided (Render Postgres), use it
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    # Parse database configuration from $DATABASE_URL
+    db_config = dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+    DATABASES['default'].update(db_config)
 
 
 # Password validation
@@ -126,6 +137,12 @@ STATIC_URL = 'static/'
 # Include the project-level static directory so runserver serves files in /static/
 from pathlib import Path as _Path
 STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# Where collectstatic will collect static files for production
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Use WhiteNoise storage backend to serve compressed static files
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

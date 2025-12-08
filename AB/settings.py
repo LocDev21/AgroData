@@ -12,7 +12,14 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
-import dj_database_url
+
+# dj-database-url is optional for local development; when missing we avoid failing import so
+# `manage.py runserver` still works. In production (DATABASE_URL set) install the package
+# or set DATABASE_URL through Render and add dj-database-url to your environment.
+try:
+    import dj_database_url
+except Exception:
+    dj_database_url = None
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,8 +34,13 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-=3fj85-g_j7ss(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() in ('true', '1', 't')
 
-# Allow hosts from env (comma separated) or fallback to localhost for local dev
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost').split(',')
+# Allow hosts from env (comma separated) or fallback to common local dev hosts
+env_hosts = os.environ.get('DJANGO_ALLOWED_HOSTS')
+if env_hosts:
+    # split and strip any whitespace
+    ALLOWED_HOSTS = [h.strip() for h in env_hosts.split(',') if h.strip()]
+else:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0','agrodata-mqeh.onrender.com','.onrender.com']
 
 
 # Application definition
@@ -94,6 +106,11 @@ DATABASES = {
 # If a DATABASE_URL env var is provided (Render Postgres), use it
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
+    if dj_database_url is None:
+        raise RuntimeError(
+            "DATABASE_URL is set but 'dj-database-url' is not installed. "
+            "Install it with `pip install dj-database-url` or add it to requirements.txt."
+        )
     # Parse database configuration from $DATABASE_URL
     db_config = dj_database_url.parse(DATABASE_URL, conn_max_age=600)
     DATABASES['default'].update(db_config)
@@ -148,3 +165,35 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ------------------ Security settings (tunable via env vars) ------------------
+# These are safe defaults for development. For production (DEBUG=False) set the
+# corresponding environment variables in Render (or your hosting) to enable them.
+
+# HTTP Strict Transport Security
+SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '0'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'True').lower() in ('true', '1', 't')
+SECURE_HSTS_PRELOAD = os.environ.get('SECURE_HSTS_PRELOAD', 'True').lower() in ('true', '1', 't')
+
+# Redirect HTTP -> HTTPS
+SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False').lower() in ('true', '1', 't')
+
+# Secure cookies
+SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False').lower() in ('true', '1', 't')
+CSRF_COOKIE_SECURE = os.environ.get('CSRF_COOKIE_SECURE', 'False').lower() in ('true', '1', 't')
+
+# If the app is behind a proxy (like Render), use this header to detect HTTPS.
+if os.environ.get('SECURE_PROXY_SSL_HEADER', 'True').lower() in ('true', '1', 't'):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Clickjacking protection
+X_FRAME_OPTIONS = os.environ.get('X_FRAME_OPTIONS', 'DENY')
+
+# Security note: when deploying, make sure to set a real SECRET_KEY via
+# DJANGO_SECRET_KEY and set DJANGO_DEBUG=False. Example recommended production
+# envs on Render:
+# DJANGO_SECRET_KEY=<long-random-string>
+# DJANGO_DEBUG=false
+# DJANGO_ALLOWED_HOSTS=your-app.onrender.com
+# SECURE_SSL_REDIRECT=true
+# SECURE_HSTS_SECONDS=31536000

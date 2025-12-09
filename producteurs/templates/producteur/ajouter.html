@@ -179,7 +179,8 @@
                     // ensure producteur exists, otherwise create it first
                     let producteurId = document.getElementById('producteur-id').value || '';
                     function createParcelle(prodId){
-                        fetch('/producteurs/parcelles/ajouter/', {
+                        // 🔧 CORRECTION : Chemin correct sans /producteurs/
+                        fetch('/parcelles/ajouter/', {
                             method: 'POST',
                             headers: {'X-CSRFToken': csrftoken, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type':'application/x-www-form-urlencoded'},
                             body: new URLSearchParams({nom: nom, superficie: superficie||'', adresse: adresse||'', producteur: prodId, ajax: '1'})
@@ -222,7 +223,8 @@
                     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
                     let producteurId = document.getElementById('producteur-id').value || '';
                     function createRecolte(prodId){
-                        fetch('/producteurs/recoltes/ajouter/', {
+                        // 🔧 CORRECTION : Chemin correct sans /producteurs/
+                        fetch('/recoltes/ajouter/', {
                             method: 'POST',
                             headers: {'X-CSRFToken': csrftoken, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type':'application/x-www-form-urlencoded'},
                             body: new URLSearchParams({fruit: fruit, quantite: quant||'', date_recolte: date||'', producteur: prodId, parcelle: parcelleId, ajax: '1'})

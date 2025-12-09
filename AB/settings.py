@@ -189,6 +189,12 @@ if os.environ.get('SECURE_PROXY_SSL_HEADER', 'True').lower() in ('true', '1', 't
 # Clickjacking protection
 X_FRAME_OPTIONS = os.environ.get('X_FRAME_OPTIONS', 'DENY')
 
+# CSRF Trusted Origins (pour éviter les erreurs réseau lors de POST requests)
+CSRF_TRUSTED_ORIGINS = [
+       'https://agrodata-mqeh.onrender.com',
+       'https://*.onrender.com',
+   ]
+
 # Security note: when deploying, make sure to set a real SECRET_KEY via
 # DJANGO_SECRET_KEY and set DJANGO_DEBUG=False. Example recommended production
 # envs on Render:

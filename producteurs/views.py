@@ -78,94 +78,119 @@ def liste_producteurs(request):
 def ajouter_producteur(request):
     parcelles = Parcelle.objects.all()
     if request.method == "POST":
-        # if producteur already created via AJAX, reuse it
-        existing_id = request.POST.get('producteur_id') or request.POST.get('producteur')
-        if existing_id:
-            try:
-                producteur = Producteur.objects.get(id=int(existing_id))
-            except Exception:
-                producteur = None
-        else:
-            producteur = None
-
-        if not producteur:
-            # create the producteur
-            nom = request.POST.get('nom', '').strip()
-            prenom = request.POST.get('prenom', '').strip()
-            adresse = request.POST.get('adresse', '').strip()
-            telephone = request.POST.get('telephone', '').strip()
-
-            producteur = Producteur.objects.create(
-                nom=nom,
-                prenom=prenom,
-                adresse=adresse,
-                telephone=telephone
-            )
-
-        # If this is an AJAX call asking to create only the producteur (from ajouter page), return JSON
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.POST.get('ajax') == '1':
-            return JsonResponse({'id': producteur.id, 'nom': f"{producteur.nom} {producteur.prenom}"})
-
-        # Create any new parcelles submitted (arrays)
-        parcelle_noms = request.POST.getlist('parcelle_nom')
-        parcelle_superficies = request.POST.getlist('parcelle_superficie')
-        parcelle_adresses = request.POST.getlist('parcelle_adresse')
-
-        new_parcelles = []
-        for i, pnom in enumerate(parcelle_noms):
-            pnom = pnom.strip()
-            if not pnom:
-                continue
-            superficie = parcelle_superficies[i] if i < len(parcelle_superficies) else ''
-            adresse_p = parcelle_adresses[i] if i < len(parcelle_adresses) else ''
-            parc = Parcelle.objects.create(
-                nom=pnom,
-                superficie=(superficie or 0),
-                adresse=adresse_p,
-                producteur=producteur
-            )
-            new_parcelles.append(parc)
-
-        # Create recoltes (can reference existing parcelles by id or new-parcelle indexes 'new-0')
-        recolte_fruits = request.POST.getlist('recolte_fruit')
-        recolte_quantites = request.POST.getlist('recolte_quantite')
-        recolte_dates = request.POST.getlist('recolte_date')
-        recolte_parcelles = request.POST.getlist('recolte_parcelle')
-
-        for i, fruit in enumerate(recolte_fruits):
-            fruit = fruit.strip()
-            if not fruit:
-                continue
-            quantite = recolte_quantites[i] if i < len(recolte_quantites) else 0
-            date_recolte = recolte_dates[i] if i < len(recolte_dates) else None
-            parcelle_ref = recolte_parcelles[i] if i < len(recolte_parcelles) else ''
-
-            # determine the Parcelle instance
-            parcelle_obj = None
-            if parcelle_ref.startswith('new-'):
+        try:
+            # if producteur already created via AJAX, reuse it
+            existing_id = request.POST.get('producteur_id') or request.POST.get('producteur')
+            if existing_id:
                 try:
-                    idx = int(parcelle_ref.split('-', 1)[1])
-                    parcelle_obj = new_parcelles[idx]
+                    producteur = Producteur.objects.get(id=int(existing_id))
                 except Exception:
-                    parcelle_obj = None
+                    producteur = None
             else:
+                producteur = None
+
+            if not producteur:
+                # create the producteur
+                nom = request.POST.get('nom', '').strip()
+                prenom = request.POST.get('prenom', '').strip()
+                adresse = request.POST.get('adresse', '').strip()
+                telephone = request.POST.get('telephone', '').strip()
+                
+                # Générer un téléphone unique si vide (pour éviter l'erreur unique constraint)
+                if not telephone:
+                    import uuid
+                    telephone = f"temp-{uuid.uuid4().hex[:8]}"
+
+                producteur = Producteur.objects.create(
+                    nom=nom,
+                    prenom=prenom,
+                    adresse=adresse,
+                    telephone=telephone
+                )
+
+            # If this is an AJAX call asking to create only the producteur (from ajouter page), return JSON
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.POST.get('ajax') == '1':
+                return JsonResponse({'id': producteur.id, 'nom': f"{producteur.nom} {producteur.prenom}"})
+
+            # Create any new parcelles submitted (arrays)
+            parcelle_noms = request.POST.getlist('parcelle_nom')
+            parcelle_superficies = request.POST.getlist('parcelle_superficie')
+            parcelle_adresses = request.POST.getlist('parcelle_adresse')
+
+            new_parcelles = []
+            for i, pnom in enumerate(parcelle_noms):
+                pnom = pnom.strip()
+                if not pnom:
+                    continue
+                superficie = parcelle_superficies[i] if i < len(parcelle_superficies) else ''
+                adresse_p = parcelle_adresses[i] if i < len(parcelle_adresses) else ''
                 try:
-                    parcelle_obj = get_object_or_404(Parcelle, id=int(parcelle_ref))
-                except Exception:
-                    parcelle_obj = None
+                    superficie_val = float(superficie) if superficie else 0
+                except ValueError:
+                    superficie_val = 0
+                parc = Parcelle.objects.create(
+                    nom=pnom,
+                    superficie=superficie_val,
+                    adresse=adresse_p,
+                    producteur=producteur
+                )
+                new_parcelles.append(parc)
 
-            # create recolte if parcelle resolved or allow null parcelle
-            Recolte.objects.create(
-                fruit=fruit,
-                quantite=(quantite or 0),
-                date_recolte=(date_recolte or None),
-                producteur=producteur,
-                parcelle=parcelle_obj
-            )
+            # Create recoltes (can reference existing parcelles by id or new-parcelle indexes 'new-0')
+            recolte_fruits = request.POST.getlist('recolte_fruit')
+            recolte_quantites = request.POST.getlist('recolte_quantite')
+            recolte_dates = request.POST.getlist('recolte_date')
+            recolte_parcelles = request.POST.getlist('recolte_parcelle')
 
-        return redirect('details_producteur', producteur.id)
+            from datetime import date as date_module
+            for i, fruit in enumerate(recolte_fruits):
+                fruit = fruit.strip()
+                if not fruit:
+                    continue
+                quantite = recolte_quantites[i] if i < len(recolte_quantites) else ''
+                date_recolte = recolte_dates[i] if i < len(recolte_dates) else ''
+                parcelle_ref = recolte_parcelles[i] if i < len(recolte_parcelles) else ''
+
+                # determine the Parcelle instance
+                parcelle_obj = None
+                if parcelle_ref and parcelle_ref.startswith('new-'):
+                    try:
+                        idx = int(parcelle_ref.split('-', 1)[1])
+                        parcelle_obj = new_parcelles[idx]
+                    except Exception:
+                        parcelle_obj = None
+                elif parcelle_ref:
+                    try:
+                        parcelle_obj = Parcelle.objects.get(id=int(parcelle_ref))
+                    except Exception:
+                        parcelle_obj = None
+
+                # Ne créer la récolte que si on a une parcelle valide (le modèle l'exige)
+                if parcelle_obj:
+                    try:
+                        quantite_val = float(quantite) if quantite else 0
+                    except ValueError:
+                        quantite_val = 0
+                    
+                    # Utiliser la date du jour si vide
+                    date_recolte_val = date_recolte if date_recolte else date_module.today()
+                    
+                    Recolte.objects.create(
+                        fruit=fruit,
+                        quantite=quantite_val,
+                        date_recolte=date_recolte_val,
+                        producteur=producteur,
+                        parcelle=parcelle_obj
+                    )
+
+            return redirect('details_producteur', producteur.id)
+        except Exception as e:
+            # En cas d'erreur, afficher la page avec un message d'erreur
+            return render(request, 'producteur/ajouter.html', {'parcelles': parcelles, 'error': str(e)})
 
     return render(request, 'producteur/ajouter.html', {'parcelles': parcelles})
+
+
 
 
 def modifier_producteur(request, id):
@@ -380,31 +405,63 @@ def ajouter_recolte(request):
     parcelles = Parcelle.objects.all()
 
     if request.method == "POST":
-        fruit = request.POST['fruit']
-        quantite = request.POST['quantite']
-        date_recolte = request.POST['date_recolte']
-        producteur = get_object_or_404(Producteur, id=request.POST['producteur'])
-        parcelle_id = request.POST.get('parcelle')
-        parcelle = None
-        if parcelle_id:
+        try:
+            fruit = request.POST.get('fruit', '').strip()
+            quantite = request.POST.get('quantite', '')
+            date_recolte = request.POST.get('date_recolte', '')
+            producteur_id = request.POST.get('producteur')
+            parcelle_id = request.POST.get('parcelle')
+            
+            # Validation
+            if not fruit:
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.POST.get('ajax') == '1':
+                    return JsonResponse({'error': 'Le fruit est requis'}, status=400)
+                return redirect('liste_recoltes')
+            
+            if not producteur_id:
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.POST.get('ajax') == '1':
+                    return JsonResponse({'error': 'Le producteur est requis'}, status=400)
+                return redirect('liste_recoltes')
+            
+            if not parcelle_id:
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.POST.get('ajax') == '1':
+                    return JsonResponse({'error': 'La parcelle est requise'}, status=400)
+                return redirect('liste_recoltes')
+            
+            producteur = get_object_or_404(Producteur, id=producteur_id)
+            parcelle = get_object_or_404(Parcelle, id=parcelle_id)
+            
+            # Convertir quantite en float, défaut à 0 si vide
             try:
-                parcelle = get_object_or_404(Parcelle, id=parcelle_id)
-            except Exception:
-                parcelle = None
+                quantite_val = float(quantite) if quantite else 0
+            except ValueError:
+                quantite_val = 0
+            
+            # Gérer date_recolte vide - utiliser la date du jour si vide
+            from datetime import date
+            if date_recolte:
+                date_recolte_val = date_recolte
+            else:
+                date_recolte_val = date.today()
 
-        recolte = Recolte.objects.create(
-            fruit=fruit,
-            quantite=quantite,
-            date_recolte=date_recolte,
-            producteur=producteur,
-            parcelle=parcelle
-        )
-        # if AJAX, return JSON
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.POST.get('ajax') == '1':
-            return JsonResponse({'id': recolte.id, 'fruit': recolte.fruit, 'parcelle_id': parcelle.id if parcelle else None})
-        return redirect('liste_recoltes')
+            recolte = Recolte.objects.create(
+                fruit=fruit,
+                quantite=quantite_val,
+                date_recolte=date_recolte_val,
+                producteur=producteur,
+                parcelle=parcelle
+            )
+            # if AJAX, return JSON
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.POST.get('ajax') == '1':
+                return JsonResponse({'id': recolte.id, 'fruit': recolte.fruit, 'parcelle_id': parcelle.id})
+            return redirect('liste_recoltes')
+        except Exception as e:
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.POST.get('ajax') == '1':
+                return JsonResponse({'error': str(e)}, status=400)
+            return redirect('liste_recoltes')
 
     return render(request, 'recolte/ajouter.html', {'producteurs': producteurs, 'parcelles': parcelles})
+
 
 
 def modifier_recolte(request, id):

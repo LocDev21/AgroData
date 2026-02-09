@@ -86,8 +86,7 @@
                         <select name="recolte_parcelle" class="form-select">
                             <option value="">-- Choisir ou laisser vide --</option>
                             {% for p in parcelles %}
-                            <option value="{{ p.id }}" {% if recolte.parcelle and recolte.parcelle.id==p.id %}selected{%
-                                endif %}>{{ p.nom }}</option>
+                                <option value="{{ p.id }}" {% if recolte.parcelle and recolte.parcelle.id == p.id %}selected{% endif %}>{{ p.nom }}</option>
                             {% endfor %}
                         </select>
                     </div>
